@@ -4,65 +4,97 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DevSecOps Roadmap</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
-  <div class="theme-switch-wrapper">
-    <label class="theme-switch" for="checkbox">
-      <input type="checkbox" id="checkbox" />
-      <div class="slider round"></div>
-    </label>
-    <span id="theme-label" style="margin-left: 8px; font-size: 0.9rem;">Modo oscuro</span>
+<div class="shell">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo">
+      <span class="logo-path">~/devsecops-roadmap</span>
+    </div>
+    <div class="topbar-controls">
+      <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">light</button>
+    </div>
   </div>
 
-  <h1>DevSecOps Roadmap — 18 meses</h1>
-  <p class="subtitle">Selecciona una fase para ver el detalle completo</p>
+  <!-- Window chrome -->
+  <div class="window">
+    <div class="window-bar">
+      <div class="window-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="window-title">bash — devsecops-roadmap — 80×24</div>
+    </div>
+    <div class="window-body">
+      <div class="prompt">
+        <span class="ps1">user@roadmap:~$</span>
+        <span class="cmd">cat roadmap.md</span>
+      </div>
+      <h1>DevSecOps Roadmap — 18 meses</h1>
+      <p class="subtitle">// Ruta para trabajo remoto en dólares · DevOps + Ciberseguridad</p>
+    </div>
+  </div>
+
+  <!-- Phase list -->
+  <div class="sec-header"><span class="marker">▸</span> FASES</div>
 
   <div class="phase-cards">
     {% for id, phase in phases.items() %}
+    {% set comp, total = progress[id] %}
     <a href="/phase/{{ id }}" class="phase-card p{{ id }}">
       <div class="card-header">
-        <span class="pnum">{{ id }}</span>
+        <span class="pnum">0{{ id }}</span>
         <div>
           <div class="card-title">{{ phase.title }}</div>
           <div class="card-sub">{{ phase.sub }}</div>
         </div>
       </div>
       <div class="card-progress">
-        {% set comp, total = progress[id] %}
-        <progress value="{{ comp }}" max="{{ total }}"></progress>
-        <span>{{ comp }}/{{ total }} semanas</span>
+        <span class="ascii-bar">
+          {%- set pct = (comp / total * 10) | int if total > 0 else 0 -%}
+          [
+          {%- for i in range(10) -%}
+            {%- if i < pct -%}<span class="filled">█</span>{%- else -%}░{%- endif -%}
+          {%- endfor -%}
+          ]
+        </span>
+        <span class="progress-label">{{ comp }}/{{ total }} semanas</span>
+        {% if comp == total and total > 0 %}
+          <span class="badge badge-ok">DONE</span>
+        {% elif comp > 0 %}
+          <span class="badge badge-warn">IN PROGRESS</span>
+        {% else %}
+          <span class="badge badge-soon">PENDING</span>
+        {% endif %}
       </div>
+      <span class="card-arrow">›</span>
     </a>
     {% endfor %}
   </div>
 
-  <script>
-    const toggle = document.getElementById('checkbox');
-    const themeLabel = document.getElementById('theme-label');
-    const currentTheme = localStorage.getItem('theme');
+  <!-- Footer -->
+  <div class="shell-footer">
+    <span>// 18 meses · 5 fases · DevSecOps</span>
+    <span>presiona una fase para continuar</span>
+  </div>
 
-    // Por defecto: dark. Si light está guardado, aplicar.
-    if (currentTheme === 'light') {
-      document.body.classList.add('light-mode');
-      toggle.checked = true;
-      themeLabel.textContent = 'Modo claro';
-    } else {
-      toggle.checked = false;
-      themeLabel.textContent = 'Modo oscuro';
-    }
+</div>
 
-    toggle.addEventListener('change', function() {
-      if (this.checked) {
-        document.body.classList.add('light-mode');
-        localStorage.setItem('theme', 'light');
-        themeLabel.textContent = 'Modo claro';
-      } else {
-        document.body.classList.remove('light-mode');
-        localStorage.setItem('theme', 'dark');
-        themeLabel.textContent = 'Modo oscuro';
-      }
+<script>
+  // Tema persistente (sin depender de app.js)
+  (function() {
+    const btn = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.body.classList.toggle('light', saved === 'light');
+    btn.textContent = saved === 'light' ? 'dark' : 'light';
+    btn.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      btn.textContent = isLight ? 'dark' : 'light';
     });
-  </script>
+  })();
+</script>
 </body>
 </html>

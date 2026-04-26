@@ -3,122 +3,162 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ phase.title }} - DevSecOps Roadmap</title>
+  <title>Fase {{ phase_id }} — {{ phase.title }}</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="theme-switch-wrapper">
-    <label class="theme-switch" for="checkbox">
-      <input type="checkbox" id="checkbox" />
-      <div class="slider round"></div>
-    </label>
-    <span id="theme-label" style="margin-left: 8px; font-size: 0.9rem;">Modo oscuro</span>
+<div class="shell">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo">
+      <span class="logo-path">~/devsecops-roadmap/phase-{{ phase_id }}</span>
+    </div>
+    <div class="topbar-controls">
+      <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">light</button>
+    </div>
   </div>
 
-  <a href="/" class="back-link">← Volver al índice</a>
+  <a href="/" class="back-link">Volver al índice</a>
 
-  <h1>{{ phase.title }}</h1>
-  <p class="subtitle">{{ phase.sub }}</p>
+  <!-- Window chrome -->
+  <div class="window">
+    <div class="window-bar">
+      <div class="window-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="window-title">bash — fase-{{ phase_id }} — 80×24</div>
+    </div>
+    <div class="window-body">
+      <div class="prompt">
+        <span class="ps1">user@roadmap:~$</span>
+        <span class="cmd">cd phase-{{ phase_id }} && cat overview.md</span>
+      </div>
+      <h1>{{ phase.title }}</h1>
+      <p class="subtitle">{{ phase.sub }}</p>
+    </div>
+  </div>
 
+  <!-- Weeks -->
+  <div class="sec-header"><span class="marker">▸</span> SEMANAS</div>
   <div class="weeks-container">
     {% for week in phase.weeks %}
-    <div class="week-card {% if loop.index0 in phase.high_time_weeks %}high-time{% endif %}">
+    <div class="week-card {% if loop.index0 in phase.high_time_weeks %}high-time{% endif %} {% if state.tasks[loop.index0] %}done{% endif %}">
       <div class="week-header">
-        <input type="checkbox" class="week-check" data-week-index="{{ loop.index0 }}"
-          {% if state.tasks[loop.index0] %}checked{% endif %}>
-        <h3>{{ week.title }}</h3>
+        <input
+          type="checkbox"
+          class="week-check"
+          data-week-index="{{ loop.index0 }}"
+          {% if state.tasks[loop.index0] %}checked{% endif %}
+        >
+        <span class="week-title">{{ week.title }}</span>
         {% if loop.index0 in phase.high_time_weeks %}
-          <span class="badge high-time-badge">⏳ Más tiempo</span>
+          <span class="high-time-badge">⏳ +tiempo</span>
         {% endif %}
       </div>
       <p class="week-desc">{{ week.desc }}</p>
       <div class="hours-row">
-        <label>Horas dedicadas:</label>
-        <input type="number" min="0" class="hours-input" data-week-index="{{ loop.index0 }}"
-          value="{{ state.hours[loop.index0|string] or '' }}">
+        <label></label>
+        <input
+          type="number"
+          min="0"
+          class="hours-input"
+          data-week-index="{{ loop.index0 }}"
+          value="{{ state.hours[loop.index0|string] or '' }}"
+          placeholder="0"
+        >
+        <span style="font-size:11px;color:var(--text-faint)">hrs</span>
       </div>
     </div>
     {% endfor %}
   </div>
 
-  <!-- Sección de biblioteca -->
+  <!-- Biblioteca de recursos -->
+  <div class="sec-header"><span class="marker">▸</span> BIBLIOTECA · RECURSOS</div>
   <div class="section">
-    <h2>Mini biblioteca (YouTube, artículos)</h2>
     <div class="lib-input">
-      <input type="text" id="lib-title" placeholder="Título">
-      <input type="url" id="lib-url" placeholder="URL">
-      <button id="add-lib-btn" class="btn">Agregar</button>
+      <input type="text"  id="lib-title" placeholder="Título del recurso" autocomplete="off">
+      <input type="url"   id="lib-url"   placeholder="https://..." autocomplete="off">
+      <button id="add-lib-btn" class="btn btn-green">AGREGAR</button>
     </div>
+    <p id="lib-empty" class="lib-empty {% if state.library %}hidden{% endif %}">
+      // sin recursos aún — agrega videos de YouTube, artículos, docs
+    </p>
     <ul id="lib-list" class="lib-list">
       {% for link in state.library %}
       <li>
-        <a href="{{ link.url }}" target="_blank">{{ link.title }}</a>
-        <span class="delete-link" data-index="{{ loop.index0 }}">×</span>
+        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
+        <span class="delete-link" data-index="{{ loop.index0 }}" title="Eliminar">×</span>
       </li>
       {% endfor %}
     </ul>
   </div>
 
-  <!-- Gestión de PDF -->
+  <!-- PDF -->
+  <div class="sec-header"><span class="marker">▸</span> PDF DE ESTUDIO</div>
   <div class="section">
-    <h2>PDF de estudio</h2>
     <div id="pdf-section">
       {% if state.pdf %}
-        <p>Archivo actual: <strong id="pdf-name-display">{{ state.pdf_name or state.pdf }}</strong></p>
-        <button id="rename-pdf-btn" class="btn">Renombrar</button>
-        <button id="replace-pdf-btn" class="btn">Reemplazar</button>
-        <button id="delete-pdf-btn" class="btn btn-danger">Eliminar</button>
-        <br>
-        <a href="/uploads/{{ state.pdf }}" target="_blank" class="btn view-pdf">Ver PDF</a>
+        <p class="pdf-info">
+          <strong id="pdf-name-display">{{ state.pdf_name or state.pdf }}</strong>
+        </p>
+        <div class="btn-group">
+          <a href="/uploads/{{ state.pdf }}" target="_blank" class="btn btn-green">VER</a>
+          <button id="rename-pdf-btn"  class="btn">RENOMBRAR</button>
+          <button id="replace-pdf-btn" class="btn">REEMPLAZAR</button>
+          <button id="delete-pdf-btn"  class="btn btn-red">ELIMINAR</button>
+        </div>
       {% else %}
-        <p>No hay PDF subido.</p>
-        <label class="btn upload-btn">
-          Subir PDF
+        <p style="font-size:12px;color:var(--text-faint);margin-bottom:.5rem">
+          // sin PDF adjunto
+        </p>
+        <label class="btn">
+          SUBIR PDF
           <input type="file" id="pdf-upload-input" accept=".pdf" hidden>
         </label>
       {% endif %}
     </div>
   </div>
 
-  <!-- Enlaces a exámenes por subtema -->
+  <!-- Exámenes por subtema -->
+  <div class="sec-header"><span class="marker">▸</span> EXÁMENES DE PRÁCTICA</div>
   <div class="section">
-    <h2>Exámenes de práctica</h2>
     <div class="exam-links">
       {% for subtopic in phase.subtopics %}
-      <a href="/exam/{{ phase_id }}/{{ subtopic.slug }}" class="exam-link">{{ subtopic.name }}</a>
+      <a href="/exam/{{ phase_id }}/{{ subtopic.slug }}" class="exam-link">
+        <span>{{ subtopic.name }}</span>
+        <span class="slug">· /exam/{{ phase_id }}/{{ subtopic.slug }}</span>
+      </a>
       {% endfor %}
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
-  <script>
-    // Configurar fase actual
-    window.PHASE_ID = {{ phase_id }};
-    // Inicializar estado previo desde Jinja
-    window.initialState = {{ state | tojson }};
+  <!-- Footer -->
+  <div class="shell-footer">
+    <span>// fase {{ phase_id }}/5</span>
+    <span>última modificación guardada automáticamente</span>
+  </div>
 
-    // Manejo del tema
-    const toggle = document.getElementById('checkbox');
-    const themeLabel = document.getElementById('theme-label');
-    if (localStorage.getItem('theme') === 'light') {
-      document.body.classList.add('light-mode');
-      toggle.checked = true;
-      themeLabel.textContent = 'Modo claro';
-    } else {
-      toggle.checked = false;
-      themeLabel.textContent = 'Modo oscuro';
-    }
-    toggle.addEventListener('change', function() {
-      if (this.checked) {
-        document.body.classList.add('light-mode');
-        localStorage.setItem('theme', 'light');
-        themeLabel.textContent = 'Modo claro';
-      } else {
-        document.body.classList.remove('light-mode');
-        localStorage.setItem('theme', 'dark');
-        themeLabel.textContent = 'Modo oscuro';
-      }
+</div>
+
+<script>
+  // Pasar estado inicial a JS
+  window.PHASE_ID     = {{ phase_id }};
+  window.initialState = {{ state | tojson }};
+
+  // Tema
+  (function() {
+    const btn   = document.getElementById('theme-toggle');
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.body.classList.toggle('light', saved === 'light');
+    btn.textContent = saved === 'light' ? 'dark' : 'light';
+    btn.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      btn.textContent = isLight ? 'dark' : 'light';
     });
-  </script>
+  })();
+</script>
+<script src="/static/app.js"></script>
 </body>
 </html>
