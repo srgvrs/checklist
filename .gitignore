@@ -1,4 +1,16 @@
-uploads/
+# Entorno virtual
 venv/
-__pycache__/
+
+# Base de datos (no se versiona)
 *.db
+roadmap.db
+
+# PDFs subidos por el usuario
+uploads/
+
+# Variables de entorno (contiene configuraciones locales)
+.env
+
+# Caché de Python
+__pycache__/
+*.pyc

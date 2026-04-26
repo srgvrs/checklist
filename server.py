@@ -1,36 +1,47 @@
 import os
 import json
 import sqlite3
+import time
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template, send_from_directory
 
+# Cargar variables desde el archivo .env
+load_dotenv()
+
+# Configuración desde variables de entorno (con valores por defecto)
+DB_PATH = os.getenv('DB_PATH', 'roadmap.db')
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
+FLASK_DEBUG = os.getenv('FLASK_DEBUG', '0') == '1'
+FLASK_PORT = int(os.getenv('FLASK_PORT', '5000'))
+
 app = Flask(__name__)
-DB_PATH = 'roadmap.db'
-UPLOAD_FOLDER = 'uploads'
+
+# Crear carpeta de uploads si no existe
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Contenido detallado de cada fase (el diccionario grande que ya tenías)
+# --- Datos de fases (contenido mejorado) ---
 PHASES = {
     1: {
         "title": "Fundamentos — meses 1 a 3",
-        "sub": "Linux · redes · Python · Git",
+        "sub": "Linux · redes · Python · Git · bash",
         "weeks": [
             {"title": "Semana 1-3: Linux profundo",
-             "desc": "Sistema de archivos, permisos, procesos, logs del sistema (journalctl), systemd, bash scripting. Lectura obligatoria: The Linux Command Line (completo). Práctica: instala Ubuntu Server en VM y realiza todas las tareas del libro."},
+             "desc": "Sistema de archivos, permisos, procesos, logs del sistema (journalctl), systemd, bash scripting. Lectura obligatoria: The Linux Command Line (completo). Práctica: instala Ubuntu Server en VM y realiza todas las tareas del libro. Refuerza el uso de scripts de bash para automatizar tareas de administración y parseo de logs."},
             {"title": "Semana 4-5: Redes",
-             "desc": "Modelo TCP/IP, DNS, HTTP/HTTPS, handshake TLS, firewalls (iptables/nftables). Usa tcpdump y Wireshark para capturar tráfico. Lectura: Computer Networking: A Top-Down Approach (capítulos 1-4)."},
+             "desc": "Modelo TCP/IP, DNS, HTTP/HTTPS, handshake TLS, firewalls (iptables/nftables). Usa tcpdump y Wireshark para capturar tráfico. Lectura: Computer Networking: A Top-Down Approach (capítulos 1-4). Practica siempre en entornos controlados (VMs, red local)."},
             {"title": "Semana 6-8: Python ofensivo/defensivo",
-             "desc": "Sockets, peticiones HTTP, scapy, automatización. Libro: Black Hat Python (2ª ed.). Crea tres scripts: escáner de puertos TCP, cliente-servidor y verificador de cabeceras HTTP."},
-            {"title": "Semana 9-10: Git avanzado",
-             "desc": "Flujo de trabajo con ramas, pull requests, protección de ramas, hooks. Simula colaboración con otra cuenta."},
+             "desc": "Sockets, peticiones HTTP, scapy, automatización. Libro: Black Hat Python (2ª ed.). Crea tres scripts (solo sobre tus propias VMs o redes autorizadas): escáner de puertos TCP, cliente-servidor y verificador de cabeceras HTTP. Esto es fundamental en seguridad, pero nunca escanees redes ajenas sin permiso."},
+            {"title": "Semana 9-10: Git avanzado y bash scripting",
+             "desc": "Flujo de trabajo con ramas, pull requests, protección de ramas, hooks. Simula colaboración con otra cuenta. Escribe scripts en bash para automatizar hooks de Git, tareas de despliegue simple y análisis de logs del sistema. Bash es el pegamento de DevSecOps."},
             {"title": "Semana 11-12: Documentación del proyecto",
-             "desc": "Escribe un README profesional para tu escáner de red. Explica qué hace, cómo usarlo y por qué es útil en seguridad."}
+             "desc": "Escribe un README profesional para tu escáner de red y tus scripts de bash. Explica qué hace cada herramienta, cómo usarla y por qué es útil en seguridad. Un buen portafolio incluye documentación clara."}
         ],
-        "high_time_weeks": [0, 2],
+        "high_time_weeks": [0, 2, 3],  # Linux, Python y bash scripting requieren más dedicación
         "subtopics": [
             {"name": "Linux profundo (filesystem, procesos, logs, bash)", "slug": "linux-profundo"},
             {"name": "Redes TCP/IP, DNS, HTTP/S, firewalls", "slug": "redes"},
             {"name": "Python ofensivo/defensivo", "slug": "python-seguridad"},
-            {"name": "Git", "slug": "git"}
+            {"name": "Git y bash scripting", "slug": "git-bash"}
         ]
     },
     2: {
@@ -38,23 +49,23 @@ PHASES = {
         "sub": "Docker · CI/CD seguro · AWS · secrets",
         "weeks": [
             {"title": "Semana 1-2: Docker seguro",
-             "desc": "Dockerfile multi-stage, rootless, escaneo de imágenes con Trivy. Libro: Docker Deep Dive (completo)."},
-            {"title": "Semana 3-4: AWS IAM y seguridad base",
-             "desc": "IAM (usuarios, roles, políticas de mínimo privilegio), CloudTrail, Security Hub. Activa MFA y crea políticas granulares."},
+             "desc": "Dockerfile multi-stage, rootless, escaneo de imágenes con Trivy. Libro: Docker Deep Dive (completo). Practica creando imágenes seguras y reduciendo la superficie de ataque."},
+            {"title": "Semana 3-4: AWS IAM, seguridad base y automatización con boto3",
+             "desc": "IAM (usuarios, roles, políticas de mínimo privilegio), CloudTrail, Security Hub. Activa MFA y crea políticas granulares. Usa boto3 (Python) para automatizar tareas como listar buckets sin cifrar o rotar credenciales. Es una habilidad muy demandada."},
             {"title": "Semana 5-6: CI/CD seguro",
-             "desc": "GitHub Actions con SAST (Bandit/Semgrep), secrets en Secrets Manager, escaneo de imagen en pipeline."},
+             "desc": "GitHub Actions con SAST (Bandit/Semgrep), secrets en Secrets Manager, escaneo de imagen en pipeline. Todo con mentalidad de 'no confiar en nada'."},
             {"title": "Semana 7-8: OWASP Top 10 práctica",
-             "desc": "Usa Juice Shop y DVWA para explotar y mitigar cada vulnerabilidad del Top 10."},
+             "desc": "Usa Juice Shop (principalmente) y DVWA para explotar y mitigar las 5-6 vulnerabilidades más comunes: SQLi, XSS, IDOR, broken authentication y security misconfiguration. No te disperses intentando cubrir todas."},
             {"title": "Semana 9-12: Proyecto integrador",
-             "desc": "API REST dockerizada, pipeline completo con SAST, Trivy, despliegue en EC2 con IAM restrictivo. Documenta decisiones de seguridad."}
+             "desc": "API REST dockerizada, pipeline completo con SAST, Trivy, despliegue en EC2 con IAM restrictivo. Incluye scripts de bash para automatizar el despliegue local y la auditoría. Documenta decisiones de seguridad."}
         ],
         "high_time_weeks": [2, 4],
         "subtopics": [
             {"name": "Docker seguro", "slug": "docker-seguro"},
-            {"name": "AWS IAM y CloudTrail", "slug": "aws-iam"},
+            {"name": "AWS IAM, CloudTrail y boto3", "slug": "aws-iam-boto3"},
             {"name": "CI/CD seguro (GitHub Actions)", "slug": "cicd-seguro"},
             {"name": "Manejo de secretos", "slug": "secretos"},
-            {"name": "OWASP Top 10", "slug": "owasp"}
+            {"name": "OWASP Top 10 (principales)", "slug": "owasp"}
         ]
     },
     3: {
@@ -62,17 +73,17 @@ PHASES = {
         "sub": "Pentesting básico · SOC · elegir camino",
         "weeks": [
             {"title": "Semana 1-4: TryHackMe y fundamentos ofensivos",
-             "desc": "Completa los paths 'Intro to Pentesting' y 'Web Hacking'. Familiarízate con Kali Linux, Nmap, Metasploit básico."},
+             "desc": "Completa los paths 'Intro to Pentesting' y 'Web Hacking'. Familiarízate con Kali Linux, Nmap, Metasploit básico. Todo en entornos controlados."},
             {"title": "Semana 5-8: Laboratorio personal",
-             "desc": "Monta un entorno con Kali y Metasploitable 3 / DVWA. Ejecuta y documenta 5 ataques: SQLi, XSS, escalada de privilegios, etc. Escribe writeups."},
+             "desc": "Monta un entorno con Kali y Metasploitable 3 / DVWA. Ejecuta y documenta 5 ataques: SQLi, XSS, escalada de privilegios, etc. Escribe writeups claros como si fueran reportes profesionales."},
             {"title": "Semana 9-12: Cloud security y logs",
-             "desc": "Ataques a AWS: escalación en IAM, S3 buckets públicos, metadata service. Detección con CloudWatch y GuardDuty. Publica writeups en blog/GitHub."}
+             "desc": "Ataques a AWS: escalación en IAM, S3 buckets públicos, metadata service. Usa CloudGoat de Rhino Security Labs (entorno vulnerable en AWS diseñado para practicar) en lugar de tu cuenta real. Detección con CloudWatch y GuardDuty. Publica writeups en blog o GitHub."}
         ],
         "high_time_weeks": [0, 1],
         "subtopics": [
             {"name": "Pentesting básico (Kali, Nmap)", "slug": "pentesting-basico"},
             {"name": "Ataques web (OWASP)", "slug": "ataques-web"},
-            {"name": "Cloud security attacks", "slug": "cloud-attacks"},
+            {"name": "Cloud security attacks (CloudGoat)", "slug": "cloud-attacks"},
             {"name": "Monitoreo y detección (CloudWatch)", "slug": "monitoreo"}
         ]
     },
@@ -81,19 +92,19 @@ PHASES = {
         "sub": "Terraform · Kubernetes security · compliance",
         "weeks": [
             {"title": "Semana 1-4: Terraform a fondo",
-             "desc": "Lee Terraform: Up & Running (caps 1-5). Crea una VPC segura con subnets públicas/privadas, security groups restrictivos."},
+             "desc": "Lee Terraform: Up & Running (caps 1-5). Crea una VPC segura con subnets públicas/privadas, security groups restrictivos. Practica la destrucción y recreación de entornos completos."},
             {"title": "Semana 5-6: Política como código",
              "desc": "Integra Checkov y tfsec en GitHub Actions. Define reglas personalizadas con Open Policy Agent (OPA)."},
             {"title": "Semana 7-8: Kubernetes security",
-             "desc": "Minikube, RBAC, network policies, pod security standards, escaneo de manifiestos con kubesec."},
+             "desc": "Minikube, RBAC, network policies, pod security standards, escaneo de manifiestos con kubesec. Para detección de amenazas en runtime, prueba Falco, la herramienta estándar de monitoreo de actividad sospechosa en K8s."},
             {"title": "Semana 9-12: Proyecto estrella",
-             "desc": "Infraestructura completa con Terraform: EC2/ECS + RDS en subred privada, ALB, CloudTrail, Security Hub. Pipeline que aplica políticas antes del despliegue. Modela amenazas con STRIDE."}
+             "desc": "Infraestructura completa con Terraform: EC2/ECS + RDS en subred privada, ALB, CloudTrail, Security Hub. Pipeline con políticas de seguridad antes del despliegue. Modela amenazas con STRIDE. Documenta todo con diagramas y scripts de bash para automatizar pruebas."}
         ],
         "high_time_weeks": [0, 3],
         "subtopics": [
             {"name": "Terraform seguro", "slug": "terraform"},
             {"name": "Policy as Code (Checkov, OPA)", "slug": "policy-as-code"},
-            {"name": "Kubernetes security", "slug": "kubernetes"},
+            {"name": "Kubernetes security (Falco)", "slug": "kubernetes"},
             {"name": "Threat modeling (STRIDE)", "slug": "threat-modeling"}
         ]
     },
@@ -102,21 +113,22 @@ PHASES = {
         "sub": "Certificaciones · portafolio final · posicionamiento",
         "weeks": [
             {"title": "Semana 1-4: Certificación prioritaria 1",
-             "desc": "AWS Solutions Architect Associate. Curso de Adrian Cantrill o Stephane Maarek + exámenes de práctica."},
+             "desc": "AWS Solutions Architect Associate. Si quieres entender de verdad cada servicio y su rol en seguridad, elige el curso de Adrian Cantrill (más profundo y técnico). Si necesitas aprobar rápido, el de Stephane Maarek es más directo. Ambos funcionan, pero Cantrill te da mejor base para entrevistas."},
             {"title": "Semana 5-8: Certificación prioritaria 2",
-             "desc": "CompTIA Security+ o AWS Security Specialty, según tu camino."},
+             "desc": "CompTIA Security+ o AWS Security Specialty, según tu camino. La primera es más teórica y reconocida globalmente; la segunda es específica de AWS y muy valorada en roles cloud."},
             {"title": "Semana 9-12: Portafolio y búsqueda activa",
-             "desc": "Perfecciona 3-4 proyectos en GitHub. Optimiza LinkedIn. Aplica en plataformas LATAM (arc.dev, Getón Jobs, Revelo)."}
+             "desc": "Perfecciona 3-4 proyectos en GitHub (incluye los scripts de bash, herramientas de automatización y writeups). Optimiza LinkedIn. Aplica en plataformas LATAM: arc.dev, Revelo, Getón Jobs. Revelo es actualmente la más usada para trabajo remoto en dólares desde LATAM."}
         ],
         "high_time_weeks": [0, 1],
         "subtopics": [
             {"name": "AWS Solutions Architect Associate", "slug": "aws-saa"},
             {"name": "CompTIA Security+ / AWS Security Specialty", "slug": "security-cert"},
-            {"name": "Portafolio y LinkedIn", "slug": "empleabilidad"}
+            {"name": "Portafolio y LinkedIn (Revelo, arc.dev)", "slug": "empleabilidad"}
         ]
     }
 }
 
+# --- Inicialización de base de datos con soporte de migración simple ---
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     conn.execute('''
@@ -129,7 +141,7 @@ def init_db():
             pdf_name TEXT
         )
     ''')
-    # Si la tabla ya existía sin pdf_name, la agregamos
+    # Si la tabla ya existía sin la columna pdf_name, la añadimos
     cols = [row[1] for row in conn.execute("PRAGMA table_info(phases)").fetchall()]
     if 'pdf_name' not in cols:
         conn.execute('ALTER TABLE phases ADD COLUMN pdf_name TEXT')
@@ -139,7 +151,7 @@ def init_db():
 
 init_db()
 
-# Rutas de páginas
+# --- Páginas principales ---
 @app.route('/')
 def index():
     conn = sqlite3.connect(DB_PATH)
@@ -173,7 +185,20 @@ def phase_detail(phase_id):
     }
     return render_template('phase.html', phase_id=phase_id, phase=phase_data, state=state)
 
-# API: obtener estado
+# --- Placeholder de exámenes ---
+@app.route('/exam/<int:phase_id>/<slug>')
+def exam_placeholder(phase_id, slug):
+    if phase_id not in PHASES:
+        return "Fase no encontrada", 404
+    # Buscar el subtopic por slug
+    subtopic = next((s for s in PHASES[phase_id]['subtopics'] if s['slug'] == slug), None)
+    if not subtopic:
+        return "Examen no encontrado", 404
+    return render_template('exam.html', phase_id=phase_id, slug=slug, subtopic=subtopic)
+
+# --- API REST (sin autenticación; para desarrollo local) ---
+# ⚠️ Si despliegas en un servidor público, protege estas rutas con autenticación.
+
 @app.route('/api/state/<int:phase_id>', methods=['GET'])
 def get_state(phase_id):
     conn = sqlite3.connect(DB_PATH)
@@ -189,7 +214,6 @@ def get_state(phase_id):
         })
     return jsonify({"tasks": [], "hours": {}, "library": [], "pdf": None, "pdf_name": None})
 
-# API: guardar estado
 @app.route('/api/state', methods=['POST'])
 def save_state():
     data = request.get_json()
@@ -217,7 +241,6 @@ def save_state():
     conn.close()
     return jsonify(success=True)
 
-# Subir PDF
 @app.route('/api/upload-pdf/<int:phase_id>', methods=['POST'])
 def upload_pdf(phase_id):
     if 'pdf' not in request.files:
@@ -225,7 +248,8 @@ def upload_pdf(phase_id):
     file = request.files['pdf']
     if file.filename == '' or not file.filename.lower().endswith('.pdf'):
         return jsonify(error='Solo PDF'), 400
-    filename = f"phase-{phase_id}-{os.times().elapsed}.pdf"
+    # Usar timestamp para evitar colisiones
+    filename = f"phase-{phase_id}-{int(time.time())}.pdf"
     file.save(os.path.join(UPLOAD_FOLDER, filename))
     conn = sqlite3.connect(DB_PATH)
     original_name = file.filename
@@ -234,7 +258,6 @@ def upload_pdf(phase_id):
     conn.close()
     return jsonify(filename=filename, pdf_name=original_name)
 
-# Renombrar PDF
 @app.route('/api/rename-pdf/<int:phase_id>', methods=['POST'])
 def rename_pdf(phase_id):
     data = request.get_json()
@@ -247,7 +270,6 @@ def rename_pdf(phase_id):
     conn.close()
     return jsonify(success=True)
 
-# Eliminar PDF
 @app.route('/api/delete-pdf/<int:phase_id>', methods=['POST'])
 def delete_pdf(phase_id):
     conn = sqlite3.connect(DB_PATH)
@@ -255,22 +277,23 @@ def delete_pdf(phase_id):
     if row and row[0]:
         try:
             os.remove(os.path.join(UPLOAD_FOLDER, row[0]))
-        except:
+        except FileNotFoundError:
             pass
         conn.execute('UPDATE phases SET pdf = NULL, pdf_name = NULL WHERE id = ?', (phase_id,))
         conn.commit()
     conn.close()
     return jsonify(success=True)
 
-# Servir archivos estáticos (CSS, JS)
+# --- Archivos estáticos ---
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('static', filename)
 
-# Servir PDFs subidos
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
+# --- Inicio del servidor ---
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # En producción, no usar debug=True. Usar un servidor WSGI como gunicorn.
+    app.run(debug=FLASK_DEBUG, port=FLASK_PORT)

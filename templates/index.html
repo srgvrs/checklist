@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DevSecOps Roadmap</title>
-  <link rel="stylesheet" href="static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <div class="theme-switch-wrapper">
@@ -12,7 +12,7 @@
       <input type="checkbox" id="checkbox" />
       <div class="slider round"></div>
     </label>
-    <span style="margin-left: 8px; font-size: 0.9rem;">Modo oscuro</span>
+    <span id="theme-label" style="margin-left: 8px; font-size: 0.9rem;">Modo oscuro</span>
   </div>
 
   <h1>DevSecOps Roadmap — 18 meses</h1>
@@ -38,22 +38,29 @@
   </div>
 
   <script>
-    // Modo oscuro persistente
     const toggle = document.getElementById('checkbox');
+    const themeLabel = document.getElementById('theme-label');
     const currentTheme = localStorage.getItem('theme');
+
+    // Por defecto: dark. Si light está guardado, aplicar.
     if (currentTheme === 'light') {
       document.body.classList.add('light-mode');
-      toggle.checked = false;
-    } else {
       toggle.checked = true;
+      themeLabel.textContent = 'Modo claro';
+    } else {
+      toggle.checked = false;
+      themeLabel.textContent = 'Modo oscuro';
     }
+
     toggle.addEventListener('change', function() {
       if (this.checked) {
-        document.body.classList.remove('light-mode');
-        localStorage.setItem('theme', 'dark');
-      } else {
         document.body.classList.add('light-mode');
         localStorage.setItem('theme', 'light');
+        themeLabel.textContent = 'Modo claro';
+      } else {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+        themeLabel.textContent = 'Modo oscuro';
       }
     });
   </script>

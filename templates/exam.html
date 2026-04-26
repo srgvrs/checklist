@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examen: {{ subtopic.name }} - DevSecOps Roadmap</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <a href="/phase/{{ phase_id }}" class="back-link">← Volver a la fase {{ phase_id }}</a>
+  <h1>Examen: {{ subtopic.name }}</h1>
+  <div style="background: var(--surface); padding: 2rem; border-radius: 8px; border: 1px solid var(--border);">
+    <p style="color: var(--text-secondary); font-size: 1.1rem;">
+      📝 Este examen estará disponible pronto. Aquí podrás evaluar tus conocimientos sobre <strong>{{ subtopic.name }}</strong>.
+    </p>
+    <p style="color: var(--text-secondary); margin-top: 1rem;">
+      Estamos creando preguntas prácticas basadas en escenarios reales de DevSecOps.
+    </p>
+  </div>
+</body>
+</html>
