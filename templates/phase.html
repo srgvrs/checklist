@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ phase.title }} - DevSecOps Roadmap</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="theme-switch-wrapper">
+    <label class="theme-switch" for="checkbox">
+      <input type="checkbox" id="checkbox" />
+      <div class="slider round"></div>
+    </label>
+    <span>Modo oscuro</span>
+  </div>
+
+  <a href="/" class="back-link">← Volver al índice</a>
+
+  <h1>{{ phase.title }}</h1>
+  <p class="subtitle">{{ phase.sub }}</p>
+
+  <div class="weeks-container">
+    {% for week in phase.weeks %}
+    <div class="week-card {% if loop.index0 in phase.high_time_weeks %}high-time{% endif %}">
+      <div class="week-header">
+        <input type="checkbox" class="week-check" data-week-index="{{ loop.index0 }}"
+          {% if state.tasks[loop.index0] %}checked{% endif %}>
+        <h3>{{ week.title }}</h3>
+        {% if loop.index0 in phase.high_time_weeks %}
+          <span class="badge high-time-badge">⏳ Más tiempo</span>
+        {% endif %}
+      </div>
+      <p class="week-desc">{{ week.desc }}</p>
+      <div class="hours-row">
+        <label>Horas dedicadas:</label>
+        <input type="number" min="0" class="hours-input" data-week-index="{{ loop.index0 }}"
+          value="{{ state.hours[loop.index0|string] or '' }}">
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Sección de biblioteca -->
+  <div class="section">
+    <h2>Mini biblioteca (YouTube, artículos)</h2>
+    <div class="lib-input">
+      <input type="text" id="lib-title" placeholder="Título">
+      <input type="url" id="lib-url" placeholder="URL">
+      <button id="add-lib-btn" class="btn">Agregar</button>
+    </div>
+    <ul id="lib-list" class="lib-list">
+      {% for link in state.library %}
+      <li>
+        <a href="{{ link.url }}" target="_blank">{{ link.title }}</a>
+        <span class="delete-link" data-index="{{ loop.index0 }}">×</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Gestión de PDF -->
+  <div class="section">
+    <h2>PDF de estudio</h2>
+    <div id="pdf-section">
+      {% if state.pdf %}
+        <p>Archivo actual: <strong id="pdf-name-display">{{ state.pdf_name or state.pdf }}</strong></p>
+        <button id="rename-pdf-btn" class="btn">Renombrar</button>
+        <button id="replace-pdf-btn" class="btn">Reemplazar</button>
+        <button id="delete-pdf-btn" class="btn btn-danger">Eliminar</button>
+        <br>
+        <a href="/uploads/{{ state.pdf }}" target="_blank" class="btn view-pdf">Ver PDF</a>
+      {% else %}
+        <p>No hay PDF subido.</p>
+        <label class="btn upload-btn">
+          Subir PDF
+          <input type="file" id="pdf-upload-input" accept=".pdf" hidden>
+        </label>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Enlaces a exámenes por subtema -->
+  <div class="section">
+    <h2>Exámenes de práctica</h2>
+    <div class="exam-links">
+      {% for subtopic in phase.subtopics %}
+      <a href="/exam/{{ phase_id }}/{{ subtopic.slug }}" class="exam-link">{{ subtopic.name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script>
+    // Configurar fase actual
+    window.PHASE_ID = {{ phase_id }};
+    // Inicializar estado previo desde Jinja
+    window.initialState = {{ state | tojson }};
+    // Modo oscuro
+    const toggle = document.getElementById('checkbox');
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-mode');
+      toggle.checked = false;
+    } else {
+      toggle.checked = true;
+    }
+    toggle.addEventListener('change', function() {
+      if (this.checked) {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  </script>
+</body>
+</html>

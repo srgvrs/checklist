@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevSecOps Roadmap</title>
+  <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+  <div class="theme-switch-wrapper">
+    <label class="theme-switch" for="checkbox">
+      <input type="checkbox" id="checkbox" />
+      <div class="slider round"></div>
+    </label>
+    <span style="margin-left: 8px; font-size: 0.9rem;">Modo oscuro</span>
+  </div>
+
+  <h1>DevSecOps Roadmap — 18 meses</h1>
+  <p class="subtitle">Selecciona una fase para ver el detalle completo</p>
+
+  <div class="phase-cards">
+    {% for id, phase in phases.items() %}
+    <a href="/phase/{{ id }}" class="phase-card p{{ id }}">
+      <div class="card-header">
+        <span class="pnum">{{ id }}</span>
+        <div>
+          <div class="card-title">{{ phase.title }}</div>
+          <div class="card-sub">{{ phase.sub }}</div>
+        </div>
+      </div>
+      <div class="card-progress">
+        {% set comp, total = progress[id] %}
+        <progress value="{{ comp }}" max="{{ total }}"></progress>
+        <span>{{ comp }}/{{ total }} semanas</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <script>
+    // Modo oscuro persistente
+    const toggle = document.getElementById('checkbox');
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme === 'light') {
+      document.body.classList.add('light-mode');
+      toggle.checked = false;
+    } else {
+      toggle.checked = true;
+    }
+    toggle.addEventListener('change', function() {
+      if (this.checked) {
+        document.body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  </script>
+</body>
+</html>
